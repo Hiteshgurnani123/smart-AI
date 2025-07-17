@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Roadmap - AI Job Predictor</title>
+
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- AOS (Animate on Scroll) Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --bg-color: #f4f7fc;
+            --card-bg: #ffffff;
+            --text-color: #555;
+            --heading-color: #1a1a1a;
+            --primary-color: #0d6efd;
+            --border-color: #e9ecef;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+        }
+        
+        body.loaded {
+            opacity: 1;
+        }
+        
+        /* --- Preloader --- */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .logo-loader {
+            width: 100px;
+            height: 100px;
+            border: 4px solid #ddd;
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .roadmap-container {
+            padding-top: 4rem;
+            padding-bottom: 4rem;
+        }
+
+        .main-title {
+            font-weight: 700;
+            color: var(--heading-color);
+            text-align: center;
+        }
+        .main-title .job-title {
+            color: var(--primary-color);
+        }
+        
+        .roadmap-content-card {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            padding: 2.5rem;
+            margin-top: 3rem;
+        }
+        
+        /* Styles for the generated roadmap content */
+        .roadmap-text {
+            white-space: pre-wrap; /* Preserves whitespace and line breaks */
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+        
+        .roadmap-text h1, .roadmap-text h2, .roadmap-text h3 {
+            font-weight: 600;
+            color: var(--heading-color);
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .roadmap-text ul, .roadmap-text ol {
+            padding-left: 25px;
+        }
+        
+        .roadmap-text li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .roadmap-text strong, .roadmap-text b {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .roadmap-text code {
+            background-color: #eef2f7;
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-size: 90%;
+        }
+
+        /* --- Download Button --- */
+        .download-btn {
+            background: linear-gradient(45deg, #198754, #146c43);
+            border: none;
+            padding: 14px 35px;
+            border-radius: 50px;
+            font-weight: 600;
+            color: #fff;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(25, 135, 84, 0.4);
+            text-decoration: none;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(25, 135, 84, 0.6);
+            color: #fff;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Preloader -->
+    <div id="preloader">
+        <div class="logo-loader"></div>
+    </div>
+
+    <div class="container roadmap-container">
+        <div data-aos="fade-down">
+            <h1 class="main-title">
+                Your Career Roadmap for<br>
+                <!-- *** CHANGE 1: Using job_title variable from Flask *** -->
+                <span class="job-title">{{ job_title }}</span>
+            </h1>
+            <p class="text-center lead mb-5">Generated by Gemini AI to help you advance your career.</p>
+        </div>
+
+        <!-- *** CHANGE 2: Displaying roadmap content from Flask *** -->
+        <div class="roadmap-content-card" data-aos="fade-up" data-aos-delay="200">
+            <div class="roadmap-text">
+                <!-- The 'safe' filter tells Jinja2 to render the HTML from the variable -->
+                {{ roadmap|safe }}
+            </div>
+        </div>
+        
+        <div class="text-center mt-5" data-aos="fade-up" data-aos-delay="400">
+            <!-- *** CHANGE 3: Corrected download link *** -->
+            <a href="{{ url_for('download_roadmap', job_title=job_title) }}" class="btn download-btn">
+                <i class="bi bi-file-earmark-arrow-down-fill me-2"></i>
+                <span>Download Roadmap as PDF</span>
+            </a>
+        </div>
+
+    </div>
+    
+    <!-- AOS JS -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+    <script>
+        // --- Preloader & Page Load Animation ---
+        window.addEventListener('load', () => {
+            const preloader = document.getElementById('preloader');
+            if(preloader) {
+                preloader.style.display = 'none';
+            }
+            document.body.classList.add('loaded');
+        });
+
+        // --- AOS Initialization ---
+        AOS.init({
+            once: true,
+            duration: 800,
+            offset: 100,
+        });
+    </script>
+</body>
+</html>
