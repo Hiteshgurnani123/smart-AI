@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 # Apni Gemini API Key yahan daalein
 # IMPORTANT: Apni key yahan daalein
 # Agar aapke paas API key nahi hai, to ise khaali chhod dein: ''
-GEMINI_API_KEY = 'AIzaSyBEsZIEMH6sxPqgPwdWgKivLfHcoaM7BGQ' # Apni asli key yahan daalein
+GEMINI_API_KEY = 'YOUR_API_KEY' # Apni asli key yahan daalein
 
 # --- INITIALIZATION ---
 # Flask app initialize karein
