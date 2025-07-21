@@ -8,13 +8,14 @@ import pymupdf  # PyMuPDF
 import docx2txt
 import google.generativeai as genai
 from fpdf import FPDF
-import markdown2 # PDF me formatting ke liye
+import markdown2
+from bs4 import BeautifulSoup
 
 # --- CONFIGURATION ---
 # Apni Gemini API Key yahan daalein
 # IMPORTANT: Apni key yahan daalein
 # Agar aapke paas API key nahi hai, to ise khaali chhod dein: ''
-GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY'
+GEMINI_API_KEY = 'AIzaSyBEsZIEMH6sxPqgPwdWgKivLfHcoaM7BGQ' # Apni asli key yahan daalein
 
 # --- INITIALIZATION ---
 # Flask app initialize karein
@@ -24,7 +25,14 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Gemini API ko configure karein
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        print(f"Gemini API configure karte samay error: {e}")
+        genai = None
+else:
+    print("Gemini API key nahi mili. Roadmap generation feature kaam nahi karega.")
+    genai = None
 
 # --- HELPER FUNCTIONS (Must be defined before loading models) ---
 
@@ -58,11 +66,11 @@ def extract_text_from_resume(filepath):
     """PDF ya DOCX file se text nikalne ke liye function."""
     text = ""
     try:
-        if filepath.endswith('.pdf'):
+        if filepath.lower().endswith('.pdf'):
             doc = pymupdf.open(filepath)
             for page in doc:
                 text += page.get_text()
-        elif filepath.endswith('.docx'):
+        elif filepath.lower().endswith('.docx'):
             text = docx2txt.process(filepath)
     except Exception as e:
         print(f"Error extracting text from {filepath}: {e}")
@@ -80,12 +88,17 @@ def extract_skills_from_text(text, all_skills):
 
 def generate_skill_gap_chart(user_skills, required_skills, predicted_title):
     """Pie chart banane ke liye function jo skill gap dikhata hai."""
-    import matplotlib
-    matplotlib.use('Agg') # GUI backend ke bina chalane ke liye
-    import matplotlib.pyplot as plt
+    try:
+        import matplotlib
+        matplotlib.use('Agg') # GUI backend ke bina chalane ke liye
+        import matplotlib.pyplot as plt
+    except ImportError:
+        print("Matplotlib install nahi hai. Chart generate nahi hoga.")
+        return None
 
-    user_skill_set = set(user_skills)
-    required_skill_set = set(required_skills)
+
+    user_skill_set = set(s.lower() for s in user_skills)
+    required_skill_set = set(s.lower() for s in required_skills)
 
     matched_skills_count = len(user_skill_set.intersection(required_skill_set))
     missing_skills_count = len(required_skill_set - user_skill_set)
@@ -115,7 +128,6 @@ def get_roadmap_from_gemini(job_title):
     if not GEMINI_API_KEY or not genai:
         return "Gemini API key configure nahi hai. Kripya `app.py` me apni key daalein."
     try:
-        # *** BUG FIX 3: Sahi model ka naam istemal karein ***
         model = genai.GenerativeModel('gemini-1.5-flash-latest')
         prompt = f"Act as a career coach. Create a detailed, step-by-step career roadmap for someone who wants to become a '{job_title}'. The response should be in Hinglish (Hindi written in English script). The output must be in Markdown format. Include sections for: Foundational Skills (Week 1-4), Intermediate Skills (Week 5-8), Advanced Topics (Week 9-12), and Project Building (Week 13-16). For each skill, suggest 1-2 popular online resources (like YouTube channels, Udemy courses, or official docs)."
         response = model.generate_content(prompt)
@@ -152,6 +164,9 @@ def upload_file():
 
         # 1. Resume se text aur skills extract karein
         resume_text = extract_text_from_resume(filepath)
+        if not resume_text:
+            return "Resume se text extract nahi ho paya. Kripya file check karein.", 400
+            
         all_possible_skills = {skill for skills in job_roles_skills.values() for skill in skills}
         user_skills = extract_skills_from_text(resume_text, all_possible_skills)
 
@@ -174,12 +189,10 @@ def upload_file():
         predicted_job_title = label_encoder.inverse_transform([prediction_index])[0]
 
         # 4. Required aur Missing skills calculate karein
-        # *** BUG FIX 1: Missing skills ko sahi se calculate karein ***
         required_skills = job_roles_skills.get(predicted_job_title, [])
         missing_skills = list(set(required_skills) - set(user_skills))
         
         # 5. Skill gap chart generate karein
-        # *** TYPO FIX: Corrected variable name from predicted_jo_title to predicted_job_title ***
         chart_filename = generate_skill_gap_chart(user_skills, required_skills, predicted_job_title)
         chart_url = url_for('static_file', filename=chart_filename) if chart_filename else None
 
@@ -204,21 +217,31 @@ def download_roadmap():
     """Roadmap ko PDF format me download karne ke liye."""
     job_title = request.args.get('job_title', 'Software Developer')
     
-    # *** BUG FIX 4: PDF banane ke liye roadmap content dobara generate karein ***
+    # Roadmap content dobara generate karein
     roadmap_html = get_roadmap_from_gemini(job_title)
     # HTML se saaf text nikalein (PDF ke liye)
-    from bs4 import BeautifulSoup
     soup = BeautifulSoup(roadmap_html, 'html.parser')
     roadmap_text = soup.get_text()
 
     pdf = FPDF()
     pdf.add_page()
-    pdf.add_font('Poppins', '', 'Poppins-Regular.ttf', uni=True)
-    pdf.set_font('Poppins', '', 16)
+    
+    # ---*** FIX YAHAN HAI ***---
+    # PROBLEM: Aap 'Poppins' font ka istemal kar rahe the jo FPDF me define nahi tha.
+    # SOLUTION: Hum FPDF ke standard 'Arial' font ka istemal karenge.
+    # Title ke liye Bold (B) style ka istemal karein.
+    pdf.set_font('Arial', 'B', 16)
     pdf.cell(0, 10, txt=f"{job_title} Roadmap", ln=True, align='C')
     pdf.ln(10)
-    pdf.set_font('Poppins', '', 11)
-    pdf.multi_cell(0, 8, txt=roadmap_text)
+    
+    # Body ke liye regular font.
+    pdf.set_font('Arial', '', 11)
+    
+    # Hinglish text me special characters ho sakte hain.
+    # Unko handle karne ke liye text ko encode karein taaki PDF generation fail na ho.
+    # Yeh ek suraksha kavach hai jo app ko crash hone se bachayega.
+    safe_text = roadmap_text.encode('latin-1', 'replace').decode('latin-1')
+    pdf.multi_cell(0, 8, txt=safe_text)
     
     pdf_filename = f'{job_title.replace(" ", "_")}_roadmap.pdf'
     pdf_output_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
@@ -237,8 +260,10 @@ if __name__ == '__main__':
     try:
         import bs4
         import markdown2
+        import matplotlib
     except ImportError:
         print("\n--- Zaroori Package Install Karein ---")
-        print("pip install beautifulsoup4 markdown2\n")
+        print("Kuch zaroori packages (beautifulsoup4, markdown2, matplotlib) nahi mile.")
+        print("Kripya install karein: pip install beautifulsoup4 markdown2 matplotlib\n")
 
     app.run(debug=True)
