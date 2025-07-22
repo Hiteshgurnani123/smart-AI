@@ -171,14 +171,12 @@
             <div class="col-lg-7 mb-4">
                 <div class="result-card" data-aos="fade-right" data-aos-delay="200">
                     <h4 class="d-flex align-items-center"><i class="bi bi-briefcase-fill card-title-icon"></i>Predicted Job Title</h4>
-                    <!-- *** CHANGE 1: Using job_title variable from Flask *** -->
                     <p class="predicted-job-title">{{ job_title }}</p>
                     <hr class="my-4">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <h5 class="mb-3"><i class="bi bi-check-circle-fill" style="color: var(--success-color);"></i> Your Skills</h5>
                             <ul class="skill-list">
-                                <!-- *** CHANGE 2: Looping through user_skills from Flask *** -->
                                 {% for skill in user_skills %}
                                     <li>{{ skill }}</li>
                                 {% else %}
@@ -189,7 +187,6 @@
                         <div class="col-md-6">
                             <h5 class="mb-3"><i class="bi bi-exclamation-triangle-fill" style="color: var(--warning-color);"></i> Missing Skills</h5>
                             <ul class="skill-list">
-                                <!-- *** CHANGE 3: Looping through missing_skills from Flask *** -->
                                 {% for skill in missing_skills %}
                                     <li>{{ skill }}</li>
                                 {% else %}
@@ -206,12 +203,10 @@
                 <div class="result-card" data-aos="fade-left" data-aos-delay="400">
                     <h4><i class="bi bi-pie-chart-fill card-title-icon"></i>Skill Gap Visualization</h4>
                     <p>Your skills compared to the requirements for a {{ job_title }}.</p>
-                    <!-- *** CHANGE 4: Displaying the chart image from Flask *** -->
                     <div class="chart-container text-center">
                         <img src="{{ chart_url }}" alt="Skill Gap Chart">
                     </div>
                     <div class="text-center mt-auto pt-4">
-                        <!-- *** CHANGE 5: Passing job_title to roadmap URL *** -->
                         <a href="{{ url_for('roadmap', job_title=job_title) }}" class="action-button">
                             <i class="bi bi-map-fill me-2"></i> Get Your Custom Roadmap
                         </a>

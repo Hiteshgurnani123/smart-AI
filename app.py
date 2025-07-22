@@ -11,30 +11,27 @@ from fpdf import FPDF
 import markdown2
 from bs4 import BeautifulSoup
 
-# --- CONFIGURATION ---
-# Apni Gemini API Key yahan daalein
-# IMPORTANT: Apni key yahan daalein
-# Agar aapke paas API key nahi hai, to ise khaali chhod dein: ''
-GEMINI_API_KEY = 'AIzaSyBEsZIEMH6sxPqgPwdWgKivLfHcoaM7BGQ' # Apni asli key yahan daalein
 
-# --- INITIALIZATION ---
-# Flask app initialize karein
+GEMINI_API_KEY = 'Your API key here' 
+
+
+
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Gemini API ko configure karein
+# Gemini API configure 
 if GEMINI_API_KEY:
     try:
         genai.configure(api_key=GEMINI_API_KEY)
     except Exception as e:
-        print(f"Gemini API configure karte samay error: {e}")
+        print(f"error at the time API configure: {e}")
         genai = None
 else:
-    print("Gemini API key nahi mili. Roadmap generation feature kaam nahi karega.")
+    print("API key not found.")
     genai = None
 
-# --- HELPER FUNCTIONS (Must be defined before loading models) ---
+# --- HELPER FUNCTIONS 
 
 def custom_tokenizer(text):
     """
@@ -44,26 +41,27 @@ def custom_tokenizer(text):
     """
     return text.split(', ')
 
-# --- LOAD MODELS AND DATA (Ek hi baar load hoga jab app start hogi) ---
+# --- LOAD MODELS AND DATA 
 try:
-    # Machine Learning models aur encoders load karein
+    # Machine Learning models and encoders 
     model = joblib.load('random_forest_model.pkl')
     tfidf = joblib.load('tfidf_vectorizer.pkl')
     edu_encoder = joblib.load('edu_encoder.pkl')
     loc_encoder = joblib.load('loc_encoder.pkl')
     label_encoder = joblib.load('label_encoder.pkl')
 
-    # Job roles aur skills ka data load karein
+
+    # Job roles and skills data load 
     with open('job_roles_skills.json', 'r') as f:
         job_roles_skills = json.load(f)
 except FileNotFoundError as e:
-    print(f"ERROR: Zaroori file nahi mili: {e}. Sunishchit karein ki sabhi .pkl aur .json files maujood hain.")
-    # App ko crash hone se rokne ke liye, aap yahan exit kar sakte hain ya default values set kar sakte hain
-    model, tfidf, edu_encoder, loc_encoder, label_encoder, job_roles_skills = (None,)*6
+    print(f"ERROR: important file not found : {e}. Make seur that all .pkl and .json files are uploaded.")
+
+    model, tfidf, edu_encoder, loc_encoder, label_encoder, job_roles_skills = (None,)*6  # for stpping app crashes
 
 
-def extract_text_from_resume(filepath):
-    """PDF ya DOCX file se text nikalne ke liye function."""
+def extract_text_from_resume(filepath):     # fuction for extracting text from resume 
+
     text = ""
     try:
         if filepath.lower().endswith('.pdf'):
@@ -76,24 +74,24 @@ def extract_text_from_resume(filepath):
         print(f"Error extracting text from {filepath}: {e}")
     return text
 
-def extract_skills_from_text(text, all_skills):
-    """Diye gaye text se skills nikalne ke liye function."""
+def extract_skills_from_text(text, all_skills):    # function for extracting skills from text
+
     extracted_skills = set()
     text_lower = text.lower()
     for skill in all_skills:
-        # Whole word matching ke liye regular expression
+        # regular expression for whole word matching
         if re.search(r'\b' + re.escape(skill.lower()) + r'\b', text_lower):
             extracted_skills.add(skill)
     return list(extracted_skills)
 
-def generate_skill_gap_chart(user_skills, required_skills, predicted_title):
-    """Pie chart banane ke liye function jo skill gap dikhata hai."""
+def generate_skill_gap_chart(user_skills, required_skills, predicted_title):   # fuction for skills gap visualization
+
     try:
         import matplotlib
-        matplotlib.use('Agg') # GUI backend ke bina chalane ke liye
+        matplotlib.use('Agg') #  for use without GUI backend 
         import matplotlib.pyplot as plt
     except ImportError:
-        print("Matplotlib install nahi hai. Chart generate nahi hoga.")
+        print("Matplotlib is not installed. Please install.")
         return None
 
 
@@ -103,53 +101,112 @@ def generate_skill_gap_chart(user_skills, required_skills, predicted_title):
     matched_skills_count = len(user_skill_set.intersection(required_skill_set))
     missing_skills_count = len(required_skill_set - user_skill_set)
 
-    # Agar koi required skill nahi hai, to chart na banayein
+   # if there is no skills gap then return None
     if not required_skill_set:
         return None
 
-    labels = ['Aapke Paas Hain', 'Zaroori Hain (Missing)']
+    labels = ['In Your Resume', ' (Missing)']
     sizes = [matched_skills_count, missing_skills_count]
-    colors = ['#28a745', '#ffc107'] # Green and Yellow
+    colors = ['#28a745', '#ffc107'] 
     explode = (0, 0.1) if missing_skills_count > 0 else (0, 0)
 
     fig1, ax1 = plt.subplots(figsize=(8, 6))
     ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
             shadow=True, startangle=140, colors=colors, textprops={'fontsize': 14, 'color': 'black'})
     ax1.axis('equal')
-    plt.title(f'{predicted_title} ke liye Skill Gap', fontsize=16, pad=20)
+    plt.title(f'{predicted_title} Skills Gap', fontsize=16, pad=20)
     
     chart_path = os.path.join(app.config['UPLOAD_FOLDER'], "skill_gap_chart.png")
     plt.savefig(chart_path)
     plt.close()
     return os.path.basename(chart_path)
 
-def get_roadmap_from_gemini(job_title):
-    """Gemini API se career roadmap generate karne ke liye function."""
+def get_roadmap_from_gemini(job_title):  # function to generate roadmap using API
+
     if not GEMINI_API_KEY or not genai:
-        return "Gemini API key configure nahi hai. Kripya `app.py` me apni key daalein."
+        return " ERROR: Gemini API is not configure. Please add API key in app.py"
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash-latest')
-        prompt = f"Act as a career coach. Create a detailed, step-by-step career roadmap for someone who wants to become a '{job_title}'. The response should be in Hinglish (Hindi written in English script). The output must be in Markdown format. Include sections for: Foundational Skills (Week 1-4), Intermediate Skills (Week 5-8), Advanced Topics (Week 9-12), and Project Building (Week 13-16). For each skill, suggest 1-2 popular online resources (like YouTube channels, Udemy courses, or official docs)."
+        model = genai.GenerativeModel('gemini-2.5-pro')
+
+        prompt = f"""
+You are a professional career coach. Your task is to create a comprehensive and well-structured career roadmap for someone who wants to become a '{job_title}'.
+
+Instructions:
+- Write the entire response in clear and professional English.
+- Format the output using clean Markdown with proper headings (#, ##) and bullet points (-).
+- Avoid any asterisk-based formatting.
+- Ensure the layout is easy to read, logically structured, and consistent throughout.
+
+Roadmap Format:
+
+# Career Roadmap: {job_title}
+
+## Overview
+- Provide a brief summary of the role and its importance in the industry.
+- Mention key responsibilities and typical career growth path.
+
+## Week 1-4: Foundational Skills
+### Objectives
+- List 3 to 5 core skills or topics to learn during this phase.
+### Learning Tasks
+- Briefly describe what the learner should do each week.
+### Resources
+- Recommend 1-2 quality online resources per topic (YouTube, Udemy, official docs, etc.)
+
+## Week 5-8: Intermediate Skills
+### Objectives
+- Cover intermediate-level concepts that build upon the basics.
+### Practice & Assignments
+- Suggest small projects, exercises, or challenges.
+### Resources
+- Provide recommended learning materials with brief explanations.
+
+## Week 9-12: Advanced Topics
+### Objectives
+- Introduce advanced subjects relevant to the job role.
+### Real-World Applications
+- Explain how these skills are applied in industry settings.
+### Resources
+- Suggest trusted sources to master these topics.
+
+## Week 13-16: Project Phase
+### Capstone Projects
+- Suggest 1 or 2 meaningful projects to showcase skills.
+### Tools & Technologies
+- List tools, frameworks, or platforms the learner should use.
+### Guidance
+- Provide links to example projects or tutorials if available.
+
+## Optional: Bonus Section
+- Tips for resume building, certifications, portfolio creation, or interview preparation (only if applicable to the role).
+
+## Final Advice
+- End with a short motivational note to encourage consistent learning and self-discipline.
+
+Make sure the roadmap is practical, actionable, and tailored to someone starting this journey from scratch.
+"""
+
+
         response = model.generate_content(prompt)
-        # Markdown ko HTML me convert karein
+        # Markdown to HTML convert 
         return markdown2.markdown(response.text)
     except Exception as e:
         print(f"Gemini API Error: {e}")
-        return f"Roadmap generate karte samay error aa gaya: {e}. Kripya check karein ki aapka API key sahi hai aur model ka naam (`gemini-1.5-flash-latest`) astitva mein hai."
+        return f"error occur at the time of roadmap generation: {e}. please check your API key."
 
 
 # --- FLASK ROUTES ---
 
 @app.route('/')
 def index():
-    """Home page render karta hai."""
+    """render Home Page."""
     return render_template('index.html')
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    """Resume upload, process, aur result page render karta hai."""
+    """Resume upload, process, and render result page."""
     if not all([model, tfidf, edu_encoder, loc_encoder, label_encoder, job_roles_skills]):
-        return "Server theek se configure nahi hua hai. Kripya admin se sampark karein.", 500
+        return "Server is not configured properly.", 500
 
     if 'resume' not in request.files:
         return redirect(url_for('index'))
@@ -162,18 +219,18 @@ def upload_file():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
         file.save(filepath)
 
-        # 1. Resume se text aur skills extract karein
+        # 1. Extract text and skills from resume.
         resume_text = extract_text_from_resume(filepath)
         if not resume_text:
-            return "Resume se text extract nahi ho paya. Kripya file check karein.", 400
+            return "Text could not be extracted. Please check your file.", 400
             
         all_possible_skills = {skill for skills in job_roles_skills.values() for skill in skills}
         user_skills = extract_skills_from_text(resume_text, all_possible_skills)
 
-        # 2. Model ke liye input taiyyar karein
+        # 2. Prepare input for model
         skills_tfidf = tfidf.transform([', '.join(user_skills)]).toarray()
         
-        # Default values (aap ise form se bhi le sakte hain)
+        # Default values
         education_level = 'B.Tech'
         location = 'Bangalore'
         experience = 2 # years
@@ -184,19 +241,19 @@ def upload_file():
         
         X_new = np.hstack((skills_tfidf, education_encoded, location_encoded, experience_reshaped))
 
-        # 3. Job title predict karein
+        # 3. Job title prediction
         prediction_index = model.predict(X_new)[0]
         predicted_job_title = label_encoder.inverse_transform([prediction_index])[0]
 
-        # 4. Required aur Missing skills calculate karein
+        # 4. Required and Missing skills calculate 
         required_skills = job_roles_skills.get(predicted_job_title, [])
         missing_skills = list(set(required_skills) - set(user_skills))
         
-        # 5. Skill gap chart generate karein
+        # 5. Skill gap chart generate 
         chart_filename = generate_skill_gap_chart(user_skills, required_skills, predicted_job_title)
         chart_url = url_for('static_file', filename=chart_filename) if chart_filename else None
 
-        # 6. Result page ko saare data ke saath render karein
+        # 6. Generate result page with whole data
         return render_template(
             'result.html',
             job_title=predicted_job_title,
@@ -207,7 +264,7 @@ def upload_file():
 
 @app.route('/roadmap')
 def roadmap():
-    """Gemini se roadmap generate karke page par dikhata hai."""
+    """Generate roadmap and render."""
     job_title = request.args.get('job_title', 'Software Developer')
     roadmap_html_content = get_roadmap_from_gemini(job_title)
     return render_template('roadmap.html', job_title=job_title, roadmap=roadmap_html_content)
@@ -226,20 +283,15 @@ def download_roadmap():
     pdf = FPDF()
     pdf.add_page()
     
-    # ---*** FIX YAHAN HAI ***---
-    # PROBLEM: Aap 'Poppins' font ka istemal kar rahe the jo FPDF me define nahi tha.
-    # SOLUTION: Hum FPDF ke standard 'Arial' font ka istemal karenge.
-    # Title ke liye Bold (B) style ka istemal karein.
+
     pdf.set_font('Arial', 'B', 16)
     pdf.cell(0, 10, txt=f"{job_title} Roadmap", ln=True, align='C')
     pdf.ln(10)
     
-    # Body ke liye regular font.
+    
     pdf.set_font('Arial', '', 11)
     
-    # Hinglish text me special characters ho sakte hain.
-    # Unko handle karne ke liye text ko encode karein taaki PDF generation fail na ho.
-    # Yeh ek suraksha kavach hai jo app ko crash hone se bachayega.
+
     safe_text = roadmap_text.encode('latin-1', 'replace').decode('latin-1')
     pdf.multi_cell(0, 8, txt=safe_text)
     
@@ -251,19 +303,19 @@ def download_roadmap():
     
 @app.route('/uploads/<filename>')
 def static_file(filename):
-    """Static folder se files serve karne ke liye (jaise chart image)."""
+    """To save file from static folder (like chart image)."""
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
 if __name__ == '__main__':
-    # Zaroori libraries install karne ke liye check
+    # to install important libraries
     try:
         import bs4
         import markdown2
         import matplotlib
     except ImportError:
-        print("\n--- Zaroori Package Install Karein ---")
-        print("Kuch zaroori packages (beautifulsoup4, markdown2, matplotlib) nahi mile.")
-        print("Kripya install karein: pip install beautifulsoup4 markdown2 matplotlib\n")
+        print("\n--- install important libraries ---")
+        print("Some important packages (beautifulsoup4, markdown2, matplotlib) not installed.")
+        print("please install them: pip install beautifulsoup4 markdown2 matplotlib\n")
 
     app.run(debug=True)
