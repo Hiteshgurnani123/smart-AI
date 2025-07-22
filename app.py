@@ -11,11 +11,14 @@ from fpdf import FPDF
 import markdown2
 from bs4 import BeautifulSoup
 
+# --- CONFIGURATION ---
+# Apni Gemini API Key yahan daalein
+# IMPORTANT: Apni key yahan daalein
+# Agar aapke paas API key nahi hai, to ise khaali chhod dein: ''
+GEMINI_API_KEY = 'AIzaSyBEsZIEMH6sxPqgPwdWgKivLfHcoaM7BGQ' # Apni asli key yahan daalein
 
-GEMINI_API_KEY = 'Your API key here' 
-
-
-
+# --- INITIALIZATION ---
+# Flask app initialize karein
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
