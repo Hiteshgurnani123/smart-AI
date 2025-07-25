@@ -202,6 +202,11 @@ def index():
     """render Home Page."""
     return render_template('index.html')
 
+
+@app.route('/AboutUs')
+def about():
+    return render_template('AboutUs.html')
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     """Resume upload, process, and render result page."""

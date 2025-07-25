@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - MyCareerAI</title>
+    <style>
+        /* --- Google Font --- */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        /* --- Global Styles --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            /* --- REVERTED: Back to the original blue/purple theme --- */
+            background: #0f0c29;  /* Fallback */
+            background: linear-gradient(45deg, #24243e, #302b63, #0f0c29);
+            background-size: 400% 400%;
+            animation: gradientAnimation 15s ease infinite;
+            color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        /* --- Background Gradient Animation --- */
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- Main Container --- */
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+        
+        /* --- Back to Home Link (Styled for this theme) --- */
+        .home-link-card {
+            padding: 0;
+            background: transparent;
+            border: none;
+            backdrop-filter: none;
+            box-shadow: none;
+        }
+
+        .home-link {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            background-color: rgba(129, 140, 248, 0.15);
+            color: #c7d2fe;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            border: 1px solid rgba(129, 140, 248, 0.3);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .home-link:hover {
+            background-color: rgba(129, 140, 248, 0.3);
+            color: #fff;
+        }
+
+        /* --- Card Styles --- */
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 30px 40px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeIn 0.8s forwards;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- Fade-In Animation on Scroll --- */
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Animate cards with a delay --- */
+        .card:nth-child(2) { animation-delay: 0.1s; }
+        .card:nth-child(3) { animation-delay: 0.2s; }
+        .card:nth-child(4) { animation-delay: 0.3s; }
+        .card:nth-child(5) { animation-delay: 0.4s; }
+        .card:nth-child(6) { animation-delay: 0.5s; }
+
+
+        /* --- Typography and Content Styles --- */
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            background: -webkit-linear-gradient(45deg, #818cf8, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #c7d2fe;
+            border-left: 4px solid #818cf8;
+            padding-left: 10px;
+        }
+
+        p {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #d1d5db;
+            margin-bottom: 15px;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        ul li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            color: #d1d5db;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px 15px;
+            border-radius: 10px;
+            transition: background 0.3s ease;
+        }
+
+        ul li:hover {
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        ul li::before {
+            content: '✓';
+            font-size: 1.2rem;
+            color: #818cf8;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+
+        ul li strong {
+            color: #e0e7ff;
+            font-weight: 600;
+        }
+
+        blockquote {
+            text-align: center;
+            font-size: 1.2rem;
+            font-style: italic;
+            padding: 20px;
+            border-left: 5px solid #a78bfa;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 0 10px 10px 0;
+            margin-top: 20px;
+            color: #e0e7ff;
+        }
+
+        .dev-list li::before {
+            content: '👨‍💻';
+            margin-right: 15px;
+        }
+
+        .tech-list li::before {
+            content: '🛠️';
+            margin-right: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <div class="card home-link-card">
+            <a href="{{ url_for('index') }}" class="home-link">← Back to Home</a>
+        </div>
+
+        <div class="card">
+            <h2>✨ About Us</h2>
+            <p><strong>JobNexusAi</strong> is an AI-powered career guidance platform designed to help students, freshers, and job seekers find the most suitable job roles based on their resume and skills.</p>
+            <p>We understand that many individuals are unaware of the exact job profiles that match their current skill set. That's why we built this intelligent web app — to analyze resumes using Machine Learning and recommend the best-fit career paths.</p>
+        </div>
+
+        <div class="card">
+            <h3>🚀 What We Offer:</h3>
+            <ul>
+                <li>Smart resume analysis using NLP and skill extraction</li>
+                <li>Accurate job role prediction using a trained ML model</li>
+                <li>Visual skill gap analysis through charts</li>
+                <li>Personalized career roadmaps powered by Google’s Gemini AI</li>
+                <li>Roadmap download in PDF format for offline guidance</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>🛠️ Built With:</h3>
+            <ul class="tech-list">
+                <li><strong>Flask</strong> (Python Web Framework)</li>
+                <li><strong>Machine Learning (Random Forest)</strong> for job prediction</li>
+                <li><strong>TF-IDF + Skill Matching</strong> for resume understanding</li>
+                <li><strong>Google Gemini API</strong> for AI-generated roadmaps</li>
+                <li><strong>PDF & Chart Generation</strong> using FPDF and Matplotlib</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>👨‍💻 Developed By:</h3>
+            <ul class="dev-list">
+                <li>Mohit Sharma</li>
+                <li>Hitesh Gurnani</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <blockquote>
+                <em>"Find Your Path. Build Your Skills. Shape Your Future — with AI."</em>
+            </blockquote>
+        </div>
+
+    </div>
+
+</body>
+</html>
